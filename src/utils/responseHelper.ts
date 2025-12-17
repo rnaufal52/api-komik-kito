@@ -17,7 +17,15 @@ export interface ApiResponse<T> {
 export const buildPaginationMeta = (req: Request, page: number, hasNextPage: boolean): PaginationMeta => {
     const protocol = req.protocol;
     const host = req.get('host');
-    const baseUrl = process.env.APP_BASE_URL || `${protocol}://${host}${req.originalUrl.split('?')[0]}`;
+    const envBaseUrl = process.env.APP_BASE_URL;
+    
+    // Determine the base domain (e.g. http://localhost:3000)
+    const domain = envBaseUrl ? envBaseUrl.replace(/\/$/, '') : `${protocol}://${host}`;
+    
+    // Append the current path (e.g. /api/popular)
+    const currentPath = req.originalUrl.split('?')[0];
+    const fullBaseUrl = `${domain}${currentPath}`;
+    
     const query = { ...req.query };
 
     // Next URL
@@ -25,7 +33,7 @@ export const buildPaginationMeta = (req: Request, page: number, hasNextPage: boo
     if (hasNextPage) {
         query.page = String(page + 1);
         const searchParams = new URLSearchParams(query as any);
-        nextUrl = `${baseUrl}?${searchParams.toString()}`;
+        nextUrl = `${fullBaseUrl}?${searchParams.toString()}`;
     }
 
     // Prev URL
@@ -33,7 +41,7 @@ export const buildPaginationMeta = (req: Request, page: number, hasNextPage: boo
     if (page > 1) {
         query.page = String(page - 1);
         const searchParams = new URLSearchParams(query as any);
-        prevUrl = `${baseUrl}?${searchParams.toString()}`;
+        prevUrl = `${fullBaseUrl}?${searchParams.toString()}`;
     }
 
     return {
